@@ -1,8 +1,56 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# FlightPath 3D
 
-## Getting Started
+FlightPath3D is a highly interactive, 3D flight tracking application built using Next.js and Three.js. It visualizes real-time global aviation traffic with an interactive 3D Earth globe, enabling users to explore flight data, monitor trajectories, and view detailed telemetry intuitively.
 
-First, run the development server:
+## 🚀 Features
+- **Interactive 3D Globe**: Built using `@react-three/fiber` and `@react-three/drei` for highly optimized, realistic Earth visualization.
+- **Real-Time Flight Data**: Integrating real-world flight location, speed, and heading data powered by the [Aviationstack API by APILAYER](https://apilayer.com).
+- **Realistic Aircraft Movement**: Uses client-side dead-reckoning to smoothly animate planes across the 3D map between API updates, naturally orienting them towards their heading.
+- **Modern UI**: Uses Next.js App Router, Tailwind CSS, Framer Motion for micro-animations, and Lucide React icons for a beautiful, responsive user interface.
+
+## 📋 Prerequisites
+
+Before running the project locally, you will need the following installed:
+- Node.js (v18 or higher recommended)
+- npm, yarn, bun, or pnpm
+
+You will also need an API key from Aviationstack.
+
+## 🛠️ Getting Started
+
+### 1. Clone the repository
+
+```bash
+git clone https://github.com/heyOnuoha/flight-path-3d.git
+cd FlightPath3D
+```
+
+### 2. Install dependencies
+
+```bash
+npm install
+# or
+yarn install
+# or
+pnpm install
+```
+
+### 3. Set up Environment Variables
+
+Create a `.env.local` or `.env` file in the root of your project based on the `.env.example` file provided:
+```bash
+cp .env.example .env.local
+```
+
+Add your Aviationstack API Key in the `.env.local` file:
+```env
+AVIATION_STACK_API_KEY=your_api_key_here
+```
+*Note: You can get one by signing up at [Aviationstack's website](https://aviationstack.com).*
+
+### 4. Run the Development Server
+
+Start up the local development server:
 
 ```bash
 npm run dev
@@ -10,27 +58,41 @@ npm run dev
 yarn dev
 # or
 pnpm dev
-# or
-bun dev
 ```
 
 Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+## 📁 Project Structure 
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+The main directories of the project setup are:
+- `app/`: Next.js App Router root, containing page styles and API routes used for fetching flight telemetry.
+- `components/`: Contains foundational React components.
+  - `Scene.tsx`: The primary 3D canvas rendering engine.
+  - `EarthGlobe.tsx`: Represents the interactive 3D Earth.
+  - `AirplaneMesh.tsx`: Render and path extrapolation (dead reckoning) logic for interactive airplanes.
+  - `UIOverlay.tsx`: Contains the 2D overlay design including telemetry and flight lists.
 
-## Learn More
+## 🧰 Technology Stack
 
-To learn more about Next.js, take a look at the following resources:
+- **Framework**: [Next.js](https://nextjs.org/)
+- **3D Rendering**: [Three.js](https://threejs.org/) / [React Three Fiber](https://docs.pmnd.rs/react-three-fiber/) / [React Three Drei](https://github.com/pmndrs/drei)
+- **API**: [Aviationstack API](https://aviationstack.com/)
+- **Styling**: [Tailwind CSS](https://tailwindcss.com/)
+- **Animation**: [Framer Motion](https://www.framer.com/motion/)
+- **Icons**: [Lucide React](https://lucide.dev/)
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+## 🤝 Contributing
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+We welcome contributions to FlightPath3D! Here's how you can help:
 
-## Deploy on Vercel
+1. **Fork the repository.**
+2. **Create a new branch** (`git checkout -b feature/amazing-feature`).
+3. **Commit your changes** (`git commit -m 'Add some amazing feature'`).
+4. **Push to the branch** (`git push origin feature/amazing-feature`).
+5. **Open a Pull Request.**
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+Please ensure your code follows the existing style and check for any linting errors before submitting your PR.
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+## 📄 License & Acknowledgments
+
+Flight data is provided by the [Aviationstack API](https://aviationstack.com)  by [APILAYER](https://apilayer.com). This project is for educational and personal use. Please refer to their respective terms of service before using in a production environment.
