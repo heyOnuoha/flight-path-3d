@@ -1,0 +1,17 @@
+{
+  "permissions": {
+    "allow": [
+      "WebFetch(domain:www.tutorialsteacher.com)",
+      "Bash(node scripts/copy-cesium-assets.mjs)",
+      "Bash(curl -s -o /tmp/page.html -w \"%{http_code}\" http://localhost:3000/)",
+      "Read(//tmp/**)",
+      "Bash(curl -s -o /dev/null -w \"%{http_code}\\\\n\" http://localhost:3000/cesium/Workers/cesiumWorkerBootstrapper.js)",
+      "Bash(curl -s -o /dev/null -w \"%{http_code}\\\\n\" http://localhost:3000/cesium/Assets/approximateTerrainHeights.json)",
+      "Bash(curl -s http://localhost:3000/api/flights?limit=1)",
+      "Bash(curl -sLI -w \"%{http_code}\\\\n\" -o /dev/null \"https://sandcastle.cesium.com/SampleData/models/CesiumAir/Cesium_Air.glb\")",
+      "Bash(curl -sLI -w \"%{http_code}\\\\n\" -o /dev/null \"https://raw.githubusercontent.com/CesiumGS/cesium/main/packages/engine/Source/Workers/transferTypedArrayTest.js\")",
+      "Bash(curl -sL \"https://sandcastle.cesium.com/SampleData/models/CesiumAir/Cesium_Air.glb\" -o /Users/favor/Documents/workspace/personal/DevTools/flightpath3d/public/models/airliner.glb)",
+      "Bash(node scripts/fetch-airports.mjs --force)"
+    ]
+  }
+}

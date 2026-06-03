@@ -36,6 +36,9 @@ yarn-error.log*
 # vercel
 .vercel
 
+# cesium static assets (copied from node_modules at install/build)
+/public/cesium/
+
 # typescript
 *.tsbuildinfo
 next-env.d.ts
