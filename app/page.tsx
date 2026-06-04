@@ -24,6 +24,8 @@ export default function Home() {
   const [mapStyle, setMapStyle] = useState<"dark" | "light" | "osm" | "satellite">("dark");
   const [homeTrigger, setHomeTrigger] = useState(0);
   const [apiError, setApiError] = useState<string | null>(null);
+  // Mobile-only: whether the off-canvas flight list is open (always shown on md+).
+  const [showList, setShowList] = useState(false);
 
   // List panel shows whatever the filter bar passes — no viewport restriction.
   const visibleFlights = useMemo(
@@ -87,7 +89,10 @@ export default function Home() {
 
   const handleSelectFlight = useCallback((f: Flight | null) => {
     setSelectedFlight(f);
-    if (f) setSelectedAirport(null);
+    if (f) {
+      setSelectedAirport(null);
+      setShowList(false); // close the mobile list so the detail drawer is visible
+    }
   }, []);
   const handleSelectAirport = useCallback((iata: string) => {
     setSelectedAirport(iata);
@@ -113,11 +118,21 @@ export default function Home() {
         />
       </div>
 
+      {/* Mobile backdrop behind the off-canvas flight list */}
+      {showList && (
+        <div
+          className="absolute inset-0 z-20 bg-black/50 md:hidden pointer-events-auto"
+          onClick={() => setShowList(false)}
+        />
+      )}
+
       <div className="absolute inset-0 z-10 flex pointer-events-none">
         <FlightList
           flights={visibleFlights}
           selectedFlight={selectedFlight}
           onSelectFlight={handleSelectFlight}
+          open={showList}
+          onClose={() => setShowList(false)}
         />
         <AirportPanel
           iata={selectedAirport}
@@ -130,8 +145,9 @@ export default function Home() {
             flights={flights}
             selectedFlight={selectedFlight}
             onSelectFlight={handleSelectFlight}
+            onToggleList={() => setShowList((v) => !v)}
             extraHeaderRight={
-              <div className="flex items-center gap-3 pointer-events-auto">
+              <div className="hidden lg:flex items-center gap-3 pointer-events-auto">
                 <FilterBar flights={flights} filters={filters} onChange={setFilters} />
                 <ViewControls
                   mapStyle={mapStyle}
@@ -162,7 +178,7 @@ function AttributionBanner() {
       href="https://aviationstack.com/signup/free"
       target="_blank"
       rel="noopener noreferrer"
-      className="absolute bottom-4 left-1/2 -translate-x-1/2 z-40 pointer-events-auto group block w-[420px] h-[42px] rounded-lg overflow-hidden shadow-2xl border border-[#3D7BFF]/30 hover:border-[#3D7BFF]/70 transition select-none"
+      className="absolute bottom-4 left-1/2 -translate-x-1/2 z-40 pointer-events-auto group block w-[calc(100vw-1.5rem)] max-w-[420px] h-[42px] rounded-lg overflow-hidden shadow-2xl border border-[#3D7BFF]/30 hover:border-[#3D7BFF]/70 transition select-none"
     >
       <img
         src="https://images.unsplash.com/photo-1540962351504-03099e0a754b?q=80&w=600&auto=format&fit=crop"

@@ -1,6 +1,6 @@
 "use client";
 
-import { Plane, Compass } from "lucide-react";
+import { Plane, Compass, X } from "lucide-react";
 import type { Flight } from "@/lib/types";
 import { flightKey } from "@/lib/types";
 
@@ -8,21 +8,26 @@ type Props = {
   flights: Flight[];
   selectedFlight: Flight | null;
   onSelectFlight: (f: Flight) => void;
+  // Mobile: the list is an off-canvas overlay toggled by `open`. On md+ it is
+  // always shown as a static sidebar.
+  open?: boolean;
+  onClose?: () => void;
 };
 
-export function FlightList({ flights, selectedFlight, onSelectFlight }: Props) {
+export function FlightList({ flights, selectedFlight, onSelectFlight, open = false, onClose }: Props) {
   const selectedId = selectedFlight ? flightKey(selectedFlight) : null;
 
   return (
-    <div className="pointer-events-auto bg-[#1a1a1c] border-r border-[#2c2c2e] w-80 flex flex-col shadow-2xl z-20">
+    <div
+      className={`pointer-events-auto bg-[#1a1a1c] border-r border-[#2c2c2e] w-[85vw] max-w-xs sm:w-80 flex flex-col shadow-2xl z-30 absolute inset-y-0 left-0 md:static transition-transform duration-300 md:translate-x-0 ${
+        open ? "translate-x-0" : "-translate-x-full"
+      }`}
+    >
       <div className="px-4 py-3.5 bg-[#111112] border-b border-[#2c2c2e] font-sans text-xs font-bold tracking-wider text-gray-300 flex items-center justify-between">
         <div className="flex items-center gap-2">
           <Plane className="w-4 h-4 text-[#3D7BFF]" />
           <span>ACTIVE FLIGHTS</span>
         </div>
-        <span className="bg-[#2c2c2e] text-[#3D7BFF] px-2 py-0.5 rounded font-mono text-[10px]">
-          {flights.length}
-        </span>
       </div>
       <div className="flex-1 overflow-y-auto custom-scrollbar divide-y divide-[#2c2c2e]">
         {flights.length === 0 && (

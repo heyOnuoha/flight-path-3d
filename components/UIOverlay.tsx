@@ -16,7 +16,8 @@ import {
   Eye,
   Share2,
   MoreHorizontal,
-  Navigation
+  Navigation,
+  Menu
 } from "lucide-react";
 import { format } from "date-fns";
 import type { Flight } from "@/lib/types";
@@ -28,6 +29,7 @@ type Props = {
   selectedFlight: Flight | null;
   onSelectFlight: (f: Flight | null) => void;
   extraHeaderRight?: React.ReactNode;
+  onToggleList?: () => void;
 };
 
 // Haversine formula to compute exact aviation distance
@@ -45,13 +47,22 @@ function haversineDistanceKm(lat1: number, lon1: number, lat2: number, lon2: num
   return R * c;
 }
 
-export function UIOverlay({ flights, selectedFlight, onSelectFlight, extraHeaderRight }: Props) {
+export function UIOverlay({ flights, selectedFlight, onSelectFlight, extraHeaderRight, onToggleList }: Props) {
   return (
     <div className="absolute inset-0 pointer-events-none flex flex-col font-sans">
       {/* APILayer-styled header top bar */}
-      <header className="p-4 flex justify-between items-center bg-[#111112] border-b border-[#2c2c2e] pointer-events-auto shadow-lg z-30">
-        <div className="flex items-center gap-4">
-          <div className="flex items-center gap-2 select-none cursor-pointer">
+      <header className="p-2 sm:p-4 flex justify-between items-center gap-2 bg-[#111112] border-b border-[#2c2c2e] pointer-events-auto shadow-lg z-30">
+        <div className="flex items-center gap-2 sm:gap-4 min-w-0">
+          {onToggleList && (
+            <button
+              onClick={onToggleList}
+              className="md:hidden text-gray-300 hover:text-white transition shrink-0 p-1"
+              aria-label="Toggle flight list"
+            >
+              <Menu className="w-5 h-5" />
+            </button>
+          )}
+          <div className="flex items-center gap-2 select-none cursor-pointer min-w-0">
             <div className="relative flex items-center justify-center w-7 h-7 rounded-full border-2 border-[#3D7BFF] overflow-hidden">
               {/* Spinning radar line effect */}
               <div
@@ -81,14 +92,14 @@ export function UIOverlay({ flights, selectedFlight, onSelectFlight, extraHeader
           </span>
         </div>
 
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-1.5 sm:gap-3 shrink-0">
           <FlightSearch flights={flights} onSelectFlight={onSelectFlight} />
           {extraHeaderRight}
           <a
             href="https://aviationstack.com/signup/free"
             target="_blank"
             rel="noopener noreferrer"
-            className="bg-[#3D7BFF] hover:bg-[#2D5BFF] text-white font-semibold text-xs px-3 py-1.5 rounded transition cursor-pointer whitespace-nowrap"
+            className="bg-[#3D7BFF] hover:bg-[#2D5BFF] text-white font-semibold text-[11px] sm:text-xs px-2.5 sm:px-3 py-1.5 rounded transition cursor-pointer whitespace-nowrap"
           >
             Get API Key
           </a>
@@ -206,7 +217,7 @@ function FlightSearch({
   };
 
   return (
-    <div className="pointer-events-auto relative w-72">
+    <div className="pointer-events-auto relative w-32 sm:w-72">
       {/* Click-away backdrop so the dropdown closes on an outside click. */}
       {open && <div className="fixed inset-0 z-40" onClick={() => setOpen(false)} />}
       <div className="relative z-50">
@@ -356,7 +367,7 @@ function FlightPanel({ flight, onClose }: { flight: Flight; onClose: () => void 
       animate={{ x: 0, opacity: 1 }}
       exit={{ x: "100%", opacity: 0.9 }}
       transition={{ type: "spring", damping: 25, stiffness: 200 }}
-      className="absolute right-0 top-0 bottom-0 w-[420px] pointer-events-auto bg-[#141416] border-l border-[#2c2c2e] flex flex-col pt-16 z-25 shadow-2xl text-white font-sans overflow-hidden"
+      className="absolute right-0 top-0 bottom-0 w-full sm:w-[420px] pointer-events-auto bg-[#141416] border-l border-[#2c2c2e] flex flex-col pt-16 z-25 shadow-2xl text-white font-sans overflow-hidden"
     >
       {/* 1. Header area: flight detail banner */}
       <div className="p-4 bg-[#1b2b4c] border-b border-[#2c2c2e] relative">
@@ -368,9 +379,11 @@ function FlightPanel({ flight, onClose }: { flight: Flight; onClose: () => void 
             <span className="bg-[#2c2c2e] text-gray-300 px-2 py-0.5 rounded text-[10px] font-bold">
               {flight.flight?.icao || "—"}
             </span>
-            <span className="bg-[#3D7BFF]/20 text-[#3D7BFF] border border-[#3D7BFF]/40 px-2 py-0.5 rounded text-[10px] font-bold uppercase">
-              {flight.aircraft?.iata || "B738"}
-            </span>
+            {(flight.aircraft?.iata || flight.aircraft?.icao) && (
+              <span className="bg-[#3D7BFF]/20 text-[#3D7BFF] border border-[#3D7BFF]/40 px-2 py-0.5 rounded text-[10px] font-bold uppercase">
+                {flight.aircraft?.iata || flight.aircraft?.icao}
+              </span>
+            )}
           </div>
 
           <div className="flex items-center gap-3">
@@ -562,25 +575,25 @@ function FlightPanel({ flight, onClose }: { flight: Flight; onClose: () => void 
                 className="overflow-hidden bg-[#141416]"
               >
                 <div className="grid grid-cols-2 gap-x-6 gap-y-3 p-4 font-sans text-xs border-b border-[#2c2c2e]">
-                  <Field label="AIRCRAFT TYPE" value={flight.aircraft?.iata || "Boeing 737-85R"} />
-                  <Field label="REGISTRATION" value={flight.aircraft?.registration || "ET-AXI"} valueClassName="text-[#3D7BFF]" />
-                  <Field label="SERIAL NUMBER (MSN)" value="40815" />
-                  <Field label="AIRCRAFT AGE" value="9 Years" />
-                  <Field label="AIRCRAFT CATEGORY" value="Passenger" />
-                  <Field label="COUNTRY OF REGISTRATION" value="Ethiopia" />
+                  <Field label="AIRCRAFT TYPE" value={flight.aircraft?.iata || flight.aircraft?.icao || "—"} />
+                  <Field label="REGISTRATION" value={flight.aircraft?.registration || "—"} valueClassName="text-[#3D7BFF]" />
+                  <Field label="AIRLINE" value={flight.airline?.name || "—"} />
+                  <Field label="AIRLINE CODE" value={flight.airline?.iata || flight.airline?.icao || "—"} />
+                  <Field label="FLIGHT (ICAO)" value={flight.flight?.icao || "—"} />
+                  <Field label="STATUS" value={flight.flight_status || "—"} valueClassName="text-white font-semibold capitalize" />
                 </div>
               </motion.div>
             )}
           </AnimatePresence>
         </div>
 
-        {/* Accordion 2: Recent Flights */}
+        {/* Accordion 2: Terminal & gate details (real AviationStack fields) */}
         <div>
-          <button 
+          <button
             onClick={() => setOpenRoute(!openRoute)}
             className="w-full bg-[#1a1a1c] border-b border-[#2c2c2e] px-4 py-2.5 flex items-center justify-between text-xs font-bold text-gray-300 tracking-wide font-sans cursor-pointer hover:bg-[#202022]"
           >
-            <span>RECENT {flight.aircraft?.registration || "AIRCRAFT"} FLIGHTS</span>
+            <span>TERMINAL &amp; GATE</span>
             {openRoute ? <ChevronUp className="w-4 h-4 text-gray-400" /> : <ChevronDown className="w-4 h-4 text-gray-400" />}
           </button>
           <AnimatePresence>
@@ -591,31 +604,21 @@ function FlightPanel({ flight, onClose }: { flight: Flight; onClose: () => void 
                 exit={{ height: 0, opacity: 0 }}
                 className="overflow-hidden bg-[#141416]"
               >
-                <div className="p-3 border-b border-[#2c2c2e]">
-                  <table className="w-full text-[10px] text-gray-400 font-mono text-left select-none">
-                    <thead>
-                      <tr className="border-b border-[#2c2c2e] pb-1 text-gray-500 uppercase">
-                        <th className="py-1">Date</th>
-                        <th className="py-1">From</th>
-                        <th className="py-1">To</th>
-                        <th className="py-1 text-right">Status</th>
-                      </tr>
-                    </thead>
-                    <tbody className="divide-y divide-[#2c2c2e]/40">
-                      <tr>
-                        <td className="py-1.5">01 Jun</td>
-                        <td className="py-1.5 text-white font-semibold">ADD</td>
-                        <td className="py-1.5 text-white font-semibold">{flight.departure?.iata || "LFW"}</td>
-                        <td className="py-1.5 text-right text-gray-500">Landed 12:45 PM</td>
-                      </tr>
-                      <tr>
-                        <td className="py-1.5">31 May</td>
-                        <td className="py-1.5 text-white font-semibold">NSI</td>
-                        <td className="py-1.5 text-white font-semibold">ADD</td>
-                        <td className="py-1.5 text-right text-gray-500">Landed 6:15 PM</td>
-                      </tr>
-                    </tbody>
-                  </table>
+                <div className="grid grid-cols-2 gap-x-6 gap-y-3 p-4 font-sans text-xs border-b border-[#2c2c2e]">
+                  <Field label={`${flight.departure?.iata || "DEP"} TERMINAL`} value={flight.departure?.terminal || "—"} />
+                  <Field label={`${flight.departure?.iata || "DEP"} GATE`} value={flight.departure?.gate || "—"} />
+                  <Field label={`${flight.arrival?.iata || "ARR"} TERMINAL`} value={flight.arrival?.terminal || "—"} />
+                  <Field label={`${flight.arrival?.iata || "ARR"} GATE`} value={flight.arrival?.gate || "—"} />
+                  <Field
+                    label="DEP DELAY"
+                    value={flight.departure?.delay != null ? `${flight.departure.delay} min` : "—"}
+                    valueClassName={flight.departure?.delay ? "text-amber-400 font-semibold" : "text-white font-semibold"}
+                  />
+                  <Field
+                    label="ARR DELAY"
+                    value={flight.arrival?.delay != null ? `${flight.arrival.delay} min` : "—"}
+                    valueClassName={flight.arrival?.delay ? "text-amber-400 font-semibold" : "text-white font-semibold"}
+                  />
                 </div>
               </motion.div>
             )}
@@ -640,14 +643,12 @@ function FlightPanel({ flight, onClose }: { flight: Flight; onClose: () => void 
                 className="overflow-hidden bg-[#141416]"
               >
                 <div className="grid grid-cols-2 gap-x-6 gap-y-3 p-4 font-sans text-xs border-b border-[#2c2c2e]">
-                  <Field label="BAROMETRIC ALTITUDE" value={`${Math.round((flight.live?.altitude || 10000) * 3.28084).toLocaleString()} ft`} valueClassName="text-white font-semibold" />
-                  <Field label="VERTICAL SPEED" value="0 fpm" />
-                  <Field label="GPS ALTITUDE" value={`${Math.round((flight.live?.altitude || 10000) * 3.28084).toLocaleString()} ft`} />
-                  <Field label="TRACK" value={`${Math.round(flight.live?.direction || 0)}°`} />
-                  <Field label="GROUND SPEED" value={`${Math.round((flight.live?.speed_horizontal || 0) * 0.539957)} kts`} valueClassName="text-white font-semibold" />
-                  <Field label="TRUE AIRSPEED" value={`${Math.round((flight.live?.speed_horizontal || 0) * 0.539957)} kts`} />
-                  <Field label="WIND" value="12 kts" />
-                  <Field label="TEMPERATURE" value="N/A" />
+                  <Field label="ALTITUDE" value={flight.live ? `${Math.round(flight.live.altitude * 3.28084).toLocaleString()} ft` : "—"} valueClassName="text-white font-semibold" />
+                  <Field label="VERTICAL SPEED" value={flight.live ? `${Math.round((flight.live.speed_vertical || 0) * 196.85)} fpm` : "—"} />
+                  <Field label="GROUND SPEED" value={flight.live ? `${Math.round(flight.live.speed_horizontal * 0.539957)} kts` : "—"} valueClassName="text-white font-semibold" />
+                  <Field label="TRACK" value={flight.live ? `${Math.round(flight.live.direction)}°` : "—"} />
+                  <Field label="ON GROUND" value={flight.live?.is_ground ? "Yes" : "No"} />
+                  <Field label="SPEED (KM/H)" value={flight.live ? `${Math.round(flight.live.speed_horizontal)} km/h` : "—"} />
                 </div>
               </motion.div>
             )}
@@ -672,10 +673,10 @@ function FlightPanel({ flight, onClose }: { flight: Flight; onClose: () => void 
                 className="overflow-hidden bg-[#141416]"
               >
                 <div className="grid grid-cols-2 gap-x-6 gap-y-3 p-4 font-sans text-xs border-b border-[#2c2c2e]">
-                  <Field label="ICAO 24-BIT ADDRESS" value={flight.aircraft?.icao24 || "040185"} />
-                  <Field label="SQUAWK" value="7700" />
-                  <Field label="LATITUDE" value={(flight.live?.latitude || 0).toFixed(6)} />
-                  <Field label="LONGITUDE" value={(flight.live?.longitude || 0).toFixed(6)} />
+                  <Field label="ICAO 24-BIT ADDRESS" value={flight.aircraft?.icao24 || "—"} />
+                  <Field label="LAST UPDATE" value={flight.live?.updated ? formatTime(flight.live.updated) : "—"} />
+                  <Field label="LATITUDE" value={flight.live ? flight.live.latitude.toFixed(6) : "—"} />
+                  <Field label="LONGITUDE" value={flight.live ? flight.live.longitude.toFixed(6) : "—"} />
                 </div>
               </motion.div>
             )}

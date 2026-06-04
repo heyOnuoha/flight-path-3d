@@ -28,7 +28,7 @@ export function AirportPanel({ iata, flights, onClose, onSelectFlight }: Props) 
           animate={{ x: 0, opacity: 1 }}
           exit={{ x: "-100%", opacity: 0.9 }}
           transition={{ type: "spring", damping: 26, stiffness: 200 }}
-          className="absolute left-80 top-0 bottom-0 w-96 pointer-events-auto bg-[#141416] border-r border-[#2c2c2e] p-6 flex flex-col z-15 shadow-2xl pt-16 font-sans text-white"
+          className="absolute left-0 w-full sm:left-80 sm:w-96 top-0 bottom-0 pointer-events-auto bg-[#141416] border-r border-[#2c2c2e] p-6 flex flex-col z-20 shadow-2xl pt-16 font-sans text-white"
         >
           <button
             onClick={onClose}

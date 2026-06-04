@@ -9,11 +9,25 @@ import { matchesFilters, type FilterState } from "@/lib/filters";
 
 const EARTH_RADIUS_KM = 6371;
 
-// AviationStack positions are often already 10+ minutes stale and the same
-// `updated` value persists across many polls, so unbounded dead reckoning would
-// march a plane hundreds of km off-map until it vanishes. Cap how far ahead we
-// ever project so a frozen timestamp keeps the marker near its last fix.
-const MAX_DEAD_RECKON_SEC = 120;
+// AviationStack positions are often already 10+ minutes stale, so we animate
+// from the LAST REPORTED position forward in real time (resetting whenever a
+// fresh `updated` arrives) rather than extrapolating from the stale timestamp —
+// that's what makes a selected plane visibly glide at its reported speed. The
+// cap bounds drift if the feed freezes (same `updated` across many polls).
+const MAX_LOCAL_ANIM_SEC = 150;
+
+// Per-flight animation base: the wall-clock time we first saw a given `updated`
+// fix. Dead reckoning advances from that fix by (now - baseTime), so motion is
+// continuous and bounded, and resets to the true position on each new fix.
+const animBase = new Map<string, { updated: string | null; baseTime: number }>();
+function animElapsedSec(key: string, updated: string | null, nowMs: number): number {
+  let base = animBase.get(key);
+  if (!base || base.updated !== updated) {
+    base = { updated, baseTime: nowMs };
+    animBase.set(key, base);
+  }
+  return Math.min(MAX_LOCAL_ANIM_SEC, Math.max(0, (nowMs - base.baseTime) / 1000));
+}
 
 // A live plane marker plus the visual state it was last rendered with, so the
 // 1s update loop only rebuilds the divIcon when heading/selection changes.
@@ -29,18 +43,10 @@ type Props = {
   onSelectAirport: (iata: string) => void;
 };
 
-// Dead reckoning logic to smoothly interpolate plane location
-function deadReckon(live: NonNullable<Flight["live"]>, nowMs: number) {
-  let lastMs = nowMs;
-  if (live.updated) {
-    // Normalize spaces to 'T' for standard ISO compliance across all browsers (safari/chrome/next)
-    const normalized = live.updated.includes(" ") ? live.updated.replace(" ", "T") : live.updated;
-    const parsed = Date.parse(normalized);
-    if (!isNaN(parsed)) {
-      lastMs = parsed;
-    }
-  }
-  const elapsedSec = Math.min(MAX_DEAD_RECKON_SEC, Math.max(0, (nowMs - lastMs) / 1000));
+// Dead reckoning: project the reported position forward by `elapsedSec` of
+// travel at the reported speed/heading. The caller supplies the elapsed time
+// (see animElapsedSec) so position advances smoothly every tick.
+function deadReckon(live: NonNullable<Flight["live"]>, elapsedSec: number) {
   const speedKmh = live.speed_horizontal || 800;
   const headingDeg = live.direction || 0;
   const distanceKm = (speedKmh / 3600) * elapsedSec;
@@ -284,7 +290,7 @@ export default function Map2D({
         if (!live || live.latitude == null || live.longitude == null) return;
 
         wantedKeys.add(key);
-        const { lat, lon } = deadReckon(live, now);
+        const { lat, lon } = deadReckon(live, animElapsedSec(key, live.updated ?? null, now));
         // Round heading so sub-degree dead-reckoning noise doesn't trigger an
         // icon rebuild; the icon is visually identical at that resolution.
         const heading = Math.round(live.direction || 0);
@@ -380,11 +386,12 @@ export default function Map2D({
     if (!live || !dep?.latitude || !dep?.longitude || !arr?.latitude || !arr?.longitude) return;
 
     // Periodic updater to draw trails
+    const selectedKey = flightKey(selectedFlight);
     const drawSelectedPath = () => {
       const currentMap = mapRef.current;
       if (!currentMap || !selectedFlight) return;
 
-      const { lat, lon } = deadReckon(live, Date.now());
+      const { lat, lon } = deadReckon(live, animElapsedSec(selectedKey, live.updated ?? null, Date.now()));
 
       // Create beautiful custom airport circular pins
       const createAirportIcon = (iata: string) => {
@@ -473,7 +480,7 @@ export default function Map2D({
 
     // Center and zoom on the route, framing dateline-crossing flights the short
     // way by unwrapping the airport longitudes around the live position.
-    const anchorLon = deadReckon(live, Date.now()).lon;
+    const anchorLon = deadReckon(live, animElapsedSec(flightKey(selectedFlight), live.updated ?? null, Date.now())).lon;
     const bounds = L.latLngBounds([
       [dep.latitude!, unwrapLon(dep.longitude!, anchorLon)],
       [arr.latitude!, unwrapLon(arr.longitude!, anchorLon)],
