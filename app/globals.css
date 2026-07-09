@@ -21,6 +21,18 @@ body {
   background: #050510;
 }
 
+/* Glide plane markers to their next dead-reckoned position over the 1s update
+   interval so motion reads as continuous instead of stepping once per second.
+   The transition is on the marker's own translate3d transform, so it must be
+   suppressed while the user pans/zooms (.planes-no-anim, toggled in Map2D) —
+   otherwise markers would slide to their reprojected spots and lag the tiles. */
+.custom-plane-container {
+  transition: transform 1s linear;
+}
+.planes-no-anim .custom-plane-container {
+  transition: none;
+}
+
 /* Custom scrollbar matching the APILayer blue accent */
 .custom-scrollbar::-webkit-scrollbar {
   width: 4px;

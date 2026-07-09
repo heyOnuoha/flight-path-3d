@@ -83,12 +83,9 @@ export function UIOverlay({ flights, selectedFlight, onSelectFlight, extraHeader
                 by APILayer
               </span>
             </div>
-            <span className="text-[9px] font-bold text-[#3D7BFF] border border-[#3D7BFF]/40 px-1 py-0.2 rounded font-mono animate-pulse mt-0.5 ml-1.5 uppercase">
-              LIVE
-            </span>
           </div>
           <span className="text-[10px] text-gray-500 font-mono tracking-wider hidden md:inline-block">
-            ACTIVE FEED: {flights.length} ROUTINGS ONLINE
+            ACTIVE FEED: {flights.length} ROUTINGS TRACKING
           </span>
         </div>
 

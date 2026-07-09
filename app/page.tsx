@@ -26,6 +26,9 @@ export default function Home() {
   const [apiError, setApiError] = useState<string | null>(null);
   // Mobile-only: whether the off-canvas flight list is open (always shown on md+).
   const [showList, setShowList] = useState(false);
+  // Cold-start only: shown until the first fetch resolves. Stays false once a
+  // cached feed is already on screen, so reloads don't flash a loader.
+  const [loading, setLoading] = useState(true);
 
   // List panel shows whatever the filter bar passes — no viewport restriction.
   const visibleFlights = useMemo(
@@ -41,7 +44,10 @@ export default function Home() {
     // Show last session's flights immediately on reload, so the map is never
     // blank while the first refresh is in flight (or if it comes back empty).
     const cached = loadCachedFlights();
-    if (cached && cached.length > 0) setFlights(cached);
+    if (cached && cached.length > 0) {
+      setFlights(cached);
+      setLoading(false);
+    }
 
     async function loadData() {
       try {
@@ -71,6 +77,7 @@ export default function Home() {
         console.error(error);
       } finally {
         if (!cancelled) {
+          setLoading(false);
           // Retry quickly until the first feed actually arrives (covers a
           // reload landing on a slow or fluke-empty response), then settle into
           // the 2-min poll matching the server revalidate window
@@ -160,12 +167,27 @@ export default function Home() {
         </div>
       </div>
 
+      {loading && flights.length === 0 && <LoadingScreen />}
+
       {apiError && (
         <ErrorBanner message={apiError} onDismiss={() => setApiError(null)} />
       )}
 
       <AttributionBanner />
     </main>
+  );
+}
+
+// Cold-start loader (formerly the "acquiring locks" splash). Sits above the map
+// until the first feed arrives; dismisses itself the moment flights show up.
+function LoadingScreen() {
+  return (
+    <div className="absolute inset-0 z-50 flex items-center justify-center pointer-events-none">
+      <div className="flex flex-col items-center text-center font-mono tracking-widest text-[#3D7BFF] bg-[#050510]/60 backdrop-blur-sm rounded-2xl px-8 py-6 border border-[#3D7BFF]/15">
+        <div className="w-16 h-16 border-2 border-[#3D7BFF]/20 border-t-[#3D7BFF] rounded-full animate-spin mb-5" />
+        <span className="text-sm uppercase animate-pulse">Loading live flights…</span>
+      </div>
+    </div>
   );
 }
 

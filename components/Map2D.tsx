@@ -12,9 +12,16 @@ const EARTH_RADIUS_KM = 6371;
 // AviationStack positions are often already 10+ minutes stale, so we animate
 // from the LAST REPORTED position forward in real time (resetting whenever a
 // fresh `updated` arrives) rather than extrapolating from the stale timestamp —
-// that's what makes a selected plane visibly glide at its reported speed. The
-// cap bounds drift if the feed freezes (same `updated` across many polls).
-const MAX_LOCAL_ANIM_SEC = 150;
+// that's what makes a plane visibly glide at its reported speed.
+//
+// At real speed a jet covers <1px/min at world zoom, so motion reads as frozen.
+// We exaggerate by LOCAL_ANIM_SPEEDUP to make drift perceptible on the overview
+// (still a great-circle estimate, not a literal track). The cap bounds how far
+// a plane can wander if the feed freezes (same `updated` across many polls): at
+// 600s real it never visibly stops within a normal viewing session, while a
+// genuinely stuck flight stays bounded until the next real fix corrects it.
+const LOCAL_ANIM_SPEEDUP = 10;
+const MAX_LOCAL_ANIM_SEC = 600;
 
 // Per-flight animation base: the wall-clock time we first saw a given `updated`
 // fix. Dead reckoning advances from that fix by (now - baseTime), so motion is
@@ -49,7 +56,7 @@ type Props = {
 function deadReckon(live: NonNullable<Flight["live"]>, elapsedSec: number) {
   const speedKmh = live.speed_horizontal || 800;
   const headingDeg = live.direction || 0;
-  const distanceKm = (speedKmh / 3600) * elapsedSec;
+  const distanceKm = (speedKmh / 3600) * elapsedSec * LOCAL_ANIM_SPEEDUP;
 
   const lat1 = (live.latitude * Math.PI) / 180;
   const lon1 = (live.longitude * Math.PI) / 180;
@@ -200,6 +207,15 @@ export default function Map2D({
     const resizeObserver = new ResizeObserver(ensureSize);
     resizeObserver.observe(mapContainerRef.current);
 
+    // Suppress the per-marker glide transition while the map itself is moving
+    // (pan/zoom/flyTo reproject every marker at once), so planes stay locked to
+    // the tiles instead of sliding to catch up, then resume gliding when idle.
+    const container = mapContainerRef.current;
+    const freezeAnim = () => container?.classList.add("planes-no-anim");
+    const resumeAnim = () => container?.classList.remove("planes-no-anim");
+    map.on("movestart zoomstart", freezeAnim);
+    map.on("moveend zoomend", resumeAnim);
+
     // ESC Key deselects flight
     const handleEsc = (e: KeyboardEvent) => {
       if (e.key === "Escape") {
@@ -210,6 +226,8 @@ export default function Map2D({
 
     return () => {
       window.removeEventListener("keydown", handleEsc);
+      map.off("movestart zoomstart", freezeAnim);
+      map.off("moveend zoomend", resumeAnim);
       clearTimeout(sizeTimer);
       resizeObserver.disconnect();
       map.remove();
@@ -331,11 +349,14 @@ export default function Map2D({
         renderFlight(selectedFlight, selectedKey, true);
       }
 
-      // Cleanup planes that are no longer in scope
+      // Cleanup planes that are no longer in scope. Also drop their dead-
+      // reckoning base so animBase doesn't grow unbounded across a long session
+      // of flights cycling in and out of the feed.
       planeMarkersRef.current.forEach((entry, key) => {
         if (!wantedKeys.has(key)) {
           entry.marker.remove();
           planeMarkersRef.current.delete(key);
+          animBase.delete(key);
         }
       });
     }
