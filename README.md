@@ -46,7 +46,7 @@ Add your Aviationstack API Key in the `.env.local` file:
 ```env
 AVIATION_STACK_API_KEY=your_api_key_here
 ```
-*Note: You can get one by signing up at [Aviationstack's website](https://aviationstack.com).*
+*Note: You can get one by signing up at [Aviationstack's website](https://app.apilayer.com/signup/aviationstack/?utm_source=aerostack_devtools&utm_medium=internal&utm_campaign=featured_section).*
 
 ### 4. Run the Development Server
 
@@ -76,7 +76,7 @@ The main directories of the project setup are:
 
 - **Framework**: [Next.js](https://nextjs.org/)
 - **3D Rendering**: [Three.js](https://threejs.org/) / [React Three Fiber](https://docs.pmnd.rs/react-three-fiber/) / [React Three Drei](https://github.com/pmndrs/drei)
-- **API**: [Aviationstack API](https://aviationstack.com/)
+- **API**: [Aviationstack API](https://app.apilayer.com/signup/aviationstack/?utm_source=aerostack_devtools&utm_medium=internal&utm_campaign=featured_section)
 - **Styling**: [Tailwind CSS](https://tailwindcss.com/)
 - **Animation**: [Framer Motion](https://www.framer.com/motion/)
 - **Icons**: [Lucide React](https://lucide.dev/)

@@ -93,7 +93,7 @@ export function UIOverlay({ flights, selectedFlight, onSelectFlight, extraHeader
           <FlightSearch flights={flights} onSelectFlight={onSelectFlight} />
           {extraHeaderRight}
           <a
-            href="https://aviationstack.com/signup/free"
+            href="https://app.apilayer.com/signup/aviationstack/?utm_source=aerostack_devtools&utm_medium=internal&utm_campaign=featured_section"
             target="_blank"
             rel="noopener noreferrer"
             className="bg-[#3D7BFF] hover:bg-[#2D5BFF] text-white font-semibold text-[11px] sm:text-xs px-2.5 sm:px-3 py-1.5 rounded transition cursor-pointer whitespace-nowrap"
@@ -416,7 +416,7 @@ function FlightPanel({ flight, onClose }: { flight: Flight; onClose: () => void 
       <div className="flex-1 overflow-y-auto custom-scrollbar divide-y divide-[#2c2c2e]">
         {/* 2. Sponsored ad — AviationStack / APILayer, over a dimmed aircraft photo */}
         <a
-          href="https://aviationstack.com/signup/free"
+          href="https://app.apilayer.com/signup/aviationstack/?utm_source=aerostack_devtools&utm_medium=internal&utm_campaign=featured_section"
           target="_blank"
           rel="noopener noreferrer"
           className="relative block w-full h-48 bg-[#070b18] overflow-hidden group select-none"
@@ -683,7 +683,7 @@ function FlightPanel({ flight, onClose }: { flight: Flight; onClose: () => void 
 
       {/* AviationStack / APILayer attribution banner */}
       <a
-        href="https://aviationstack.com/signup/free"
+        href="https://app.apilayer.com/signup/aviationstack/?utm_source=aerostack_devtools&utm_medium=internal&utm_campaign=featured_section"
         target="_blank"
         rel="noopener noreferrer"
         className="group flex items-center justify-between gap-2 bg-[#3D7BFF]/10 hover:bg-[#3D7BFF]/20 border-t border-[#3D7BFF]/30 px-4 py-2.5 transition select-none"

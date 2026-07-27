@@ -197,7 +197,7 @@ function LoadingScreen() {
 function AttributionBanner() {
   return (
     <a
-      href="https://aviationstack.com/signup/free"
+      href="https://app.apilayer.com/signup/aviationstack/?utm_source=aerostack_devtools&utm_medium=internal&utm_campaign=featured_section"
       target="_blank"
       rel="noopener noreferrer"
       className="absolute bottom-4 left-1/2 -translate-x-1/2 z-40 pointer-events-auto group block w-[calc(100vw-1.5rem)] max-w-[420px] h-[42px] rounded-lg overflow-hidden shadow-2xl border border-[#3D7BFF]/30 hover:border-[#3D7BFF]/70 transition select-none"
