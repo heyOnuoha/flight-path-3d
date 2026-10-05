@@ -6,6 +6,7 @@ import "leaflet/dist/leaflet.css";
 import type { Flight } from "@/lib/types";
 import { flightKey } from "@/lib/types";
 import { matchesFilters, type FilterState } from "@/lib/filters";
+import { TILE_STYLES } from "@/lib/tiles";
 
 const EARTH_RADIUS_KM = 6371;
 
@@ -35,6 +36,17 @@ function animElapsedSec(key: string, updated: string | null, nowMs: number): num
   }
   return Math.min(MAX_LOCAL_ANIM_SEC, Math.max(0, (nowMs - base.baseTime) / 1000));
 }
+
+/** How far beyond the viewport to keep planes, so they don't pop in at the edge. */
+const VIEWPORT_PAD = 0.25;
+
+/**
+ * Ceiling on simultaneous plane markers; only binds at world zoom, where the
+ * whole feed is in view. Measured flat at 125fps from 400 up to 1500, so this
+ * sits at the high end — viewport culling, not this cap, is what recovered the
+ * frame rate.
+ */
+const MAX_VISIBLE_PLANES = 1500;
 
 // A live plane marker plus the visual state it was last rendered with, so the
 // 1s update loop only rebuilds the divIcon when heading/selection changes.
@@ -188,14 +200,13 @@ export default function Map2D({
     // Add custom zoom controls on the bottom-right
     L.control.zoom({ position: "bottomright" }).addTo(map);
 
-    // Initial tile layer setup (Dark Mode default)
-    const tileLayer = L.tileLayer(
-      "https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png",
-      {
-        attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/attributions">CARTO</a>',
-        maxZoom: 20,
-      }
-    ).addTo(map);
+    // Initial tile layer setup (Dark Mode default). The style effect below
+    // applies the matching filter once it runs.
+    const initial = TILE_STYLES.dark;
+    const tileLayer = L.tileLayer(initial.url, {
+      attribution: initial.attribution,
+      maxZoom: initial.maxZoom,
+    }).addTo(map);
     tileLayerRef.current = tileLayer;
 
     // Recompute the map size once layout settles and whenever the container
@@ -240,23 +251,27 @@ export default function Map2D({
     const map = mapRef.current;
     if (!map || !tileLayerRef.current) return;
 
-    let url = "https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png";
-    let attribution = '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/attributions">CARTO</a>';
+    const layer = tileLayerRef.current;
+    const previous = layer.options.attribution;
+    const style = TILE_STYLES[mapStyle];
 
-    if (mapStyle === "light") {
-      url = "https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png";
-    } else if (mapStyle === "osm") {
-      url = "https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png";
-      attribution = '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors';
-    } else if (mapStyle === "satellite") {
-      url = "https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{x}/{y}";
-      attribution = "Tiles &copy; Esri &mdash; Source: Esri, i-cubed, USDA, USGS, AEX, GeoEye, Getmapping, Aerogrid, IGN, IGP, UPR-EGP, and the GIS User Community";
+    layer.setUrl(style.url);
+    layer.options.maxZoom = style.maxZoom;
+
+    // DARK and LIGHT are the same OSM tiles under a filter, so the pane — not
+    // the layer — is what carries the look.
+    const pane = map.getPane("tilePane");
+    if (pane) pane.style.filter = style.filter;
+
+    // Leaflet refcounts attributions, so re-adding the same credit on every
+    // switch (DARK, LIGHT and ROADS all share OSM's) would bump the count and
+    // leave it behind when we later removed it once. Only touch it on a real
+    // change.
+    if (previous !== style.attribution) {
+      if (previous) map.attributionControl.removeAttribution(previous);
+      map.attributionControl.addAttribution(style.attribution);
+      layer.options.attribution = style.attribution;
     }
-
-    tileLayerRef.current.setUrl(url);
-    // Leaflet's setUrl updates tiles dynamically, but we update attribution in layer's options
-    tileLayerRef.current.options.attribution = attribution;
-    map.attributionControl.addAttribution(attribution);
   }, [mapStyle]);
 
   // 3. React to Home Button Trigger (Reset Camera to global view)
@@ -303,12 +318,32 @@ export default function Map2D({
       const wantedKeys = new Set<string>();
       const now = Date.now();
 
+      // The feed carries a few thousand live flights, but Leaflet reprojects
+      // every marker it holds on each zoom and pan. Rendering the whole feed
+      // cost ~30 long tasks per zoom gesture; keeping only what is actually on
+      // screen — and capping the world view, where thousands of overlapping
+      // planes convey nothing anyway — keeps the map at full frame rate.
+      const viewBounds = map.getBounds().pad(VIEWPORT_PAD);
+      let rendered = 0;
+
       const renderFlight = (flight: Flight, key: string, isSelected: boolean) => {
         const live = flight.live;
         if (!live || live.latitude == null || live.longitude == null) return;
 
-        wantedKeys.add(key);
         const { lat, lon } = deadReckon(live, animElapsedSec(key, live.updated ?? null, now));
+
+        // The selected flight is always drawn, even off-screen, so the open
+        // detail panel never points at a plane that isn't there.
+        if (!isSelected) {
+          if (!viewBounds.contains([lat, lon])) return;
+          // Existing markers are cheap to keep; only new ones hit the cap, so
+          // the set stays stable instead of flickering between ticks.
+          if (rendered >= MAX_VISIBLE_PLANES && !planeMarkersRef.current.has(key)) return;
+        }
+
+        rendered++;
+        wantedKeys.add(key);
+
         // Round heading so sub-degree dead-reckoning noise doesn't trigger an
         // icon rebuild; the icon is visually identical at that resolution.
         const heading = Math.round(live.direction || 0);
@@ -365,9 +400,15 @@ export default function Map2D({
     updatePlanes();
     const interval = setInterval(updatePlanes, 1000);
 
+    // Panning or zooming changes which flights are in view, so re-cull as soon
+    // as the movement settles rather than waiting for the next tick.
+    const map = mapRef.current;
+    map?.on("moveend zoomend", updatePlanes);
+
     return () => {
       active = false;
       clearInterval(interval);
+      map?.off("moveend zoomend", updatePlanes);
     };
   }, [flights]); // Sync whenever flights lists fetch updates
 
