@@ -1,5 +1,6 @@
 "use client";
 import dynamic from "next/dynamic";
+import { assetPath } from "@/lib/assets";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { AlertTriangle, X } from "lucide-react";
 import { UIOverlay } from "@/components/UIOverlay";
@@ -211,9 +212,9 @@ function AttributionBanner() {
 
       <div className="relative z-10 h-full flex items-center justify-between gap-2 px-3">
         <div className="flex items-center gap-2 shrink-0">
-          <img src="/brand/aviationstack-white.png" alt="AviationStack" className="h-3 w-auto" />
+          <img src={assetPath("/brand/aviationstack-white.png")} alt="AviationStack" className="h-3 w-auto" />
           <span className="w-px h-3 bg-white/25" />
-          <img src="/brand/apilayer-footer.svg" alt="APILayer" className="h-3 w-auto" />
+          <img src={assetPath("/brand/apilayer-footer.svg")} alt="APILayer" className="h-3 w-auto" />
         </div>
         <span className="text-[10px] text-white/65 font-sans truncate hidden sm:inline">
           Real-time flight data API

@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useEffect, useState, useMemo } from "react";
+import { assetPath } from "@/lib/assets";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   Plane,
@@ -461,9 +462,9 @@ function FlightPanel({
           <div className="relative z-10 h-full flex flex-col justify-between p-4">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2">
-                <img src="/brand/aviationstack-white.png" alt="AviationStack" className="h-4 w-auto" />
+                <img src={assetPath("/brand/aviationstack-white.png")} alt="AviationStack" className="h-4 w-auto" />
                 <span className="w-px h-4 bg-white/25" />
-                <img src="/brand/apilayer-footer.svg" alt="APILayer" className="h-4 w-auto" />
+                <img src={assetPath("/brand/apilayer-footer.svg")} alt="APILayer" className="h-4 w-auto" />
               </div>
               <span className="text-[8px] font-bold tracking-widest text-white/40 uppercase border border-white/15 rounded px-1 py-0.5">
                 Ad

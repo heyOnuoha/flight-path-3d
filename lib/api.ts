@@ -1,4 +1,5 @@
 import type { Flight } from "./types";
+import { BASE_PATH } from "./basePath";
 
 export type FlightsResponse = {
   pagination?: { limit: number; offset: number; count: number; total: number };
@@ -23,7 +24,10 @@ export class FlightsApiError extends Error {
 // Browser HTTP cache honors the `s-maxage` / `stale-while-revalidate` headers
 // from the route handler for free.
 async function get(path: string): Promise<FlightsResponse> {
-  const res = await fetch(path, { headers: { Accept: "application/json" } });
+  // `path` is always app-relative, so basePath is applied in one place here.
+  const res = await fetch(`${BASE_PATH}${path}`, {
+    headers: { Accept: "application/json" },
+  });
   let body: FlightsResponse | undefined;
   try {
     body = (await res.json()) as FlightsResponse;
